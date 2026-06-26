@@ -21,6 +21,18 @@
 
 **Path:** `Run → gpedit.msc → Computer Configuration → Windows Settings → Security Settings → Account Policies → Password Policy`
 
+Open the Run dialog and launch the Group Policy Editor:
+
+![Open gpedit.msc](1.png)
+
+Navigate to Password Policy:
+
+![Password Policy path](2.png)
+
+After applying CIS L1 benchmark settings:
+
+![Password Policy after CIS L1](3%20after%20using%20cis%20L1.png)
+
 | Setting | Value |
 |---|---|
 | Enforce password history | 24 passwords |
@@ -37,6 +49,8 @@
 
 **Path:** `gpedit.msc → ... → Account Policies → Account Lockout Policy`
 
+![Account Lockout Policy](4%20account%20lockout%20policy.png)
+
 | Setting | Value |
 |---|---|
 | Account lockout duration | 15 minutes |
@@ -49,6 +63,14 @@
 ## 3. UAC (User Account Control)
 
 **Path:** `gpedit.msc → Computer Configuration → Windows Settings → Security Settings → Local Policies → Security Options`
+
+Before changes:
+
+![UAC before](5%20before%20UAC.png)
+
+After applying hardened UAC settings:
+
+![UAC after](5%20after%20UAC%20changes.png)
 
 | Setting | Value |
 |---|---|
@@ -67,6 +89,8 @@ After making policy changes, apply them immediately via PowerShell (run as Admin
 gpupdate /force
 ```
 
+![Force GPUpdate](6.%20force%20policy%20update.png)
+
 Expected output: `Computer Policy update has completed successfully.`
 
 ---
@@ -75,16 +99,24 @@ Expected output: `Computer Policy update has completed successfully.`
 
 **Path:** `Run → services.msc`
 
+![Open services.msc](7.%20services%20policy.png)
+
 ### Print Spooler
+
 - Open **Print Spooler** properties
 - Set **Startup type** → `Disabled`
 - Click **Stop** to stop the running service
 - Click **Apply → OK**
 
+![Disable Print Spooler](8%20disable%20print%20spooler.png)
+
 > ⚠️ Only disable if no printing is required on this endpoint.
 
 ### Xbox Services
+
 Disable all four Xbox-related services (not needed on a SOC workstation):
+
+![Disable Xbox Services](9.%20disable%20all%20xbox%20service.png)
 
 | Service | Action |
 |---|---|
@@ -100,9 +132,16 @@ Disable all four Xbox-related services (not needed on a SOC workstation):
 Sysmon provides detailed process, network, and file activity logging — essential for SOC visibility.
 
 ### Download
+
 - Visit: [Sysinternals Sysmon](https://learn.microsoft.com/en-us/sysinternals/downloads/sysmon)
 - Current version: **Sysmon v15.21**
 - Download the zip (~4.6 MB) and extract to a local folder (e.g., `C:\Users\<user>\Downloads\Sysmon`)
+
+![Download Sysmon](10.%20download%20sysmon.png)
+
+Sysmon folder contents after extraction:
+
+![Sysmon files](10a.sysmon%20file.png)
 
 ### Install with Config
 
@@ -110,6 +149,8 @@ Sysmon provides detailed process, network, and file activity logging — essenti
 cd C:\Users\<user>\Downloads\Sysmon
 .\Sysmon64.exe -accepteula -i sysmonconfig-export.xml
 ```
+
+![Installing Sysmon](11.%20installing%20sysmon.png)
 
 Expected output confirms:
 - `Sysmon64 installed.`
@@ -125,11 +166,15 @@ Expected output confirms:
 Run → eventvwr.msc → Applications and Services Logs → Microsoft → Windows → Sysmon → Operational
 ```
 
+![Open Event Viewer](11b.%20check%20event%20log%20by%20sysmon.png)
+
 A process creation event (Event ID 1) will show fields like:
 - `UtcTime` — timestamp of the event
 - `Image` — full path of the process (e.g., `C:\Windows\System32\PING.EXE`)
 - `Description` — human-readable description
 - `CommandLine` — full command used (e.g., `PING.EXE 8.8.8.8`)
+
+![Event log captured by Sysmon](12.%20event%20log%20captured.png)
 
 ---
 
@@ -138,7 +183,10 @@ A process creation event (Event ID 1) will show fields like:
 Configure logs to **archive when full** to avoid losing historical data.
 
 ### Sysmon Log
+
 **Path:** `Event Viewer → Applications and Services Logs → Microsoft → Windows → Sysmon → Operational → Properties`
+
+![Sysmon log properties](13.%20save%20logs%20without%20losing%20old%20ones.png)
 
 | Setting | Value |
 |---|---|
@@ -146,7 +194,10 @@ Configure logs to **archive when full** to avoid losing historical data.
 | When full | Archive the log when full, do not overwrite events |
 
 ### Windows Application Log
+
 **Path:** `Event Viewer → Windows Logs → Application → Properties`
+
+![Windows Application log properties](13a.%20save%20logs%20for%20windows.png)
 
 | Setting | Value |
 |---|---|
@@ -161,7 +212,13 @@ Configure logs to **archive when full** to avoid losing historical data.
 
 **Path:** `Local Security Policy (secpol.msc) → Advanced Audit Policy Configuration → System Audit Policies → Account Logon`
 
-Enable **both Success and Failure** auditing for:
+Before configuration:
+
+![Before audit policy edit](15.before%20edit%20sec%20pol%20.png)
+
+Enable **both Success and Failure** auditing for each subcategory:
+
+![Audit Credential Validation settings](15a.png)
 
 | Subcategory | Audit Events |
 |---|---|
